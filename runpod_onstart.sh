@@ -96,6 +96,14 @@ install_node "https://github.com/yolain/ComfyUI-Easy-Use"
 install_node "https://github.com/Suzie1/ComfyUI_Comfyroll_CustomNodes"
 install_node "https://github.com/rgthree/rgthree-comfy"
 
+# ── Animator воркфлоу ──────────────────────────────────────────────
+install_node "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
+install_node "https://github.com/kijai/ComfyUI-WanVideoWrapper"
+install_node "https://github.com/kijai/ComfyUI-WanAnimatePreprocess"
+install_node "https://github.com/kijai/ComfyUI-segment-anything-2"
+install_node "https://github.com/plugcrypt/CRT-Nodes"
+install_node "https://github.com/teskor-hub/comfyui-teskors-utils"
+
 log "Все ноды установлены"
 
 # ─── Функция скачивания ────────────────────────────────────────────
@@ -189,7 +197,73 @@ download \
     "$MODELS/vae" \
     "ultrafluxVAEImproved_v10.safetensors"
 
-# ─── Модели — Florence-2-SD3-Captioner ─────────────────────────────
+# ═══════════════════════════════════════════════════════════════
+# ANIMATOR ВОРКФЛОУ — модели
+# ═══════════════════════════════════════════════════════════════
+
+section "Модели — Animator (WanVideo)"
+
+mkdir -p \
+    "$MODELS/diffusion_models" \
+    "$MODELS/vae" \
+    "$MODELS/clip" \
+    "$MODELS/clip_vision" \
+    "$MODELS/loras" \
+    "$MODELS/controlnet"
+
+# ── Диффузионная модель ────────────────────────────────────────
+download \
+    "https://huggingface.co/Kijai/WanVideo_comfy_fp8_scaled/resolve/main/Wan22Animate/Wan2_2-Animate-14B_fp8_scaled_e4m3fn_KJ_v2.safetensors" \
+    "$MODELS/diffusion_models" \
+    "WanModel.safetensors"
+
+# ── VAE ───────────────────────────────────────────────────────
+download \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors" \
+    "$MODELS/vae" \
+    "vae.safetensors"
+
+# ── Text Encoder ──────────────────────────────────────────────
+download \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/umt5-xxl-enc-bf16.safetensors" \
+    "$MODELS/clip" \
+    "text_enc.safetensors"
+
+# ── CLIP Vision ───────────────────────────────────────────────
+download \
+    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors" \
+    "$MODELS/clip_vision" \
+    "klip_vision.safetensors"
+
+# ── Controlnet (Uni3C) ────────────────────────────────────────
+download \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_Uni3C_controlnet_fp16.safetensors" \
+    "$MODELS/controlnet" \
+    "Wan21_Uni3C_controlnet_fp16.safetensors"
+
+# ── LoRA: LightX2V ───────────────────────────────────────────
+download \
+    "https://huggingface.co/wangkanai/wan21-lightx2v-i2v-14b-480p/resolve/main/loras/wan/wan21-lightx2v-i2v-14b-480p-cfg-step-distill-rank256-bf16.safetensors" \
+    "$MODELS/loras" \
+    "light.safetensors"
+
+# ── LoRA: Wan Reworked ────────────────────────────────────────
+download \
+    "https://huggingface.co/f5aiteam/Wan/resolve/f0800d3b9c36764514ede2bedacb5f30072c1d38/wan2.2_i2v_lightx2v_4steps_lora_v1_high_noise.safetensors" \
+    "$MODELS/loras" \
+    "wan.reworked.safetensors"
+
+# ── LoRA: WanFun Reworked ─────────────────────────────────────
+download \
+    "https://huggingface.co/rahul7star/wan2.2Lora/resolve/main/Wan2.2-Fun-A14B-InP-low-noise-HPS2.1.safetensors" \
+    "$MODELS/loras" \
+    "WanFun.reworked.safetensors"
+
+# ── LoRA: WanPusa ─────────────────────────────────────────────
+download \
+    "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Pusa/Wan21_PusaV1_LoRA_14B_rank512_bf16.safetensors" \
+    "$MODELS/loras" \
+    "WanPusa.safetensors"
 section "Модели — Florence-2-SD3-Captioner"
 
 FLORENCE_DIR="$MODELS/LLM/Florence-2-SD3-Captioner"

@@ -3,7 +3,7 @@
 # ║   AI Syndicate — ComfyUI Template                               ║
 # ║   Template by ooga · RunPod On-start Script                     ║
 # ║                                                                 ║
-# ║   Base image: runpod/pytorch:2.8.0-py3.11-cuda12.8.1           ║
+# ║   Base image: runpod/pytorch:2.4.0-py3.11-cuda12.4.1           ║
 # ║   GPU support: RTX 3070 → RTX 5090 · A100 · H100               ║
 # ║                                                                 ║
 # ║   Первый запуск: ~30-60 мин (установка + скачивание ~50 GB)    ║
@@ -43,7 +43,7 @@ apt-get update -qq && apt-get install -y -qq \
     aria2 ffmpeg \
     libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
     > /dev/null 2>&1
-log "Зависимости установлены (CUDA 12.8 · RTX 3070→5090)"
+log "Зависимости установлены (CUDA 12.4 · RTX 3070→5090)"
 
 # ─── ComfyUI ───────────────────────────────────────────────────────
 section "ComfyUI"

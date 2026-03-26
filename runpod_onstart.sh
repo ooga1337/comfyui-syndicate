@@ -78,12 +78,22 @@ mkdir -p "$NODES_DIR"
 
 install_node "https://github.com/pythongosssss/ComfyUI-Custom-Scripts"
 install_node "https://github.com/kijai/ComfyUI-KJNodes"
+install_node "https://github.com/rgthree/rgthree-comfy"
 install_node "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite"
 install_node "https://github.com/kijai/ComfyUI-WanVideoWrapper"
 install_node "https://github.com/kijai/ComfyUI-WanAnimatePreprocess"
 install_node "https://github.com/kijai/ComfyUI-segment-anything-2"
 install_node "https://github.com/plugcrypt/CRT-Nodes"
 install_node "https://github.com/teskor-hub/comfyui-teskors-utils"
+
+# ComfyMath
+if [ -d "$NODES_DIR/ComfyUI-Workflow-Encrypt/.git" ]; then
+    git -C "$NODES_DIR/ComfyUI-Workflow-Encrypt" pull --quiet 2>/dev/null || true
+    log "Обновлён: ComfyUI-Workflow-Encrypt (ComfyMath)"
+else
+    log "Устанавливаю: ComfyUI-Workflow-Encrypt (ComfyMath)"
+    git clone --quiet --depth 1 https://github.com/jtydhr88/ComfyUI-Workflow-Encrypt.git "$NODES_DIR/ComfyUI-Workflow-Encrypt" 2>/dev/null || true
+fi
 
 log "Все ноды установлены"
 
@@ -151,6 +161,28 @@ download \
     "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan21_Uni3C_controlnet_fp16.safetensors" \
     "$MODELS/controlnet" \
     "Wan21_Uni3C_controlnet_fp16.safetensors"
+
+# ─── ONNX Detection модели ─────────────────────────────────────────
+section "Модели — ONNX Detection"
+
+mkdir -p "$MODELS/onnx"
+
+# YOLOv10m — детектор людей
+download \
+    "https://huggingface.co/Wan-AI/Wan2.2-Animate-14B/resolve/main/process_checkpoint/det/yolov10m.onnx" \
+    "$MODELS/onnx" \
+    "yolov10m.onnx"
+
+# ViTPose-H wholebody — оценка позы (нужны оба файла в одной папке)
+download \
+    "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_model.onnx" \
+    "$MODELS/onnx" \
+    "vitpose_h_wholebody_model.onnx"
+
+download \
+    "https://huggingface.co/Kijai/vitpose_comfy/resolve/main/onnx/vitpose_h_wholebody_data.bin" \
+    "$MODELS/onnx" \
+    "vitpose_h_wholebody_data.bin"
 
 section "Модели — LoRA"
 download \

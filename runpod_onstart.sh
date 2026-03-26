@@ -52,7 +52,7 @@ if [ -d "$COMFY_DIR/.git" ]; then
     git -C "$COMFY_DIR" pull --quiet
 else
     log "Клонирую ComfyUI..."
-    git clone --quiet https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR"
+    git clone --quiet --depth 1 https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR"
 fi
 pip install --quiet --no-cache-dir -r "$COMFY_DIR/requirements.txt"
 log "ComfyUI готов"
@@ -73,7 +73,7 @@ install_node() {
         git -C "$NODES_DIR/$name" pull --quiet 2>/dev/null && log "Обновлён: $name" || true
     else
         log "Устанавливаю: $name"
-        git clone --quiet "$repo" "$NODES_DIR/$name"
+        git clone --quiet --depth 1 "$repo" "$NODES_DIR/$name"
     fi
     if [ -f "$NODES_DIR/$name/requirements.txt" ]; then
         pip install --quiet --no-cache-dir -r "$NODES_DIR/$name/requirements.txt" 2>/dev/null || true

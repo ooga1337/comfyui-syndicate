@@ -35,27 +35,18 @@ echo "  ────────────────────────
 
 section "Системные зависимости"
 apt-get update -qq && apt-get install -y -qq \
-    aria2 ffmpeg \
+    aria2 ffmpeg git curl wget \
     libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
     > /dev/null 2>&1
-log "Зависимости установлены (CUDA 12.4 · RTX 3070→5090)"
+log "Зависимости установлены"
 
-# ─── PyTorch — обновляем до cu130 если нужно ───────────────────────
+# ─── PyTorch cu130 (RTX 3070 → 5090) ──────────────────────────────
 section "PyTorch"
-CUDA_VER=$(nvidia-smi --query-gpu=driver_version --format=csv,noheader 2>/dev/null | head -1 || echo "0")
-TORCH_VER=$(python3 -c "import torch; print(torch.version.cuda or '0')" 2>/dev/null || echo "0")
-log "Драйвер NVIDIA: $CUDA_VER | PyTorch CUDA: $TORCH_VER"
-
-# RTX 5090 / Blackwell и новее требуют cu130+
-if python3 -c "import torch; assert torch.cuda.is_available()" 2>/dev/null; then
-    log "CUDA доступна — PyTorch в порядке"
-else
-    warn "CUDA недоступна — устанавливаю PyTorch cu130 для новых GPU (RTX 5090+)..."
-    pip install --quiet --no-cache-dir \
-        torch torchvision torchaudio \
-        --index-url https://download.pytorch.org/whl/cu130
-    log "PyTorch cu130 установлен"
-fi
+log "Устанавливаю PyTorch cu130 (поддержка всех GPU включая RTX 5090)..."
+pip install --quiet --no-cache-dir \
+    torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/cu130
+log "PyTorch cu130 готов"
 
 section "ComfyUI"
 if [ -d "$COMFY_DIR/.git" ]; then

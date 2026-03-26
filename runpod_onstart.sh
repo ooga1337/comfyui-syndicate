@@ -1,7 +1,10 @@
 #!/bin/bash
 # ╔══════════════════════════════════════════════════════════════════╗
 # ║   AI Syndicate — ComfyUI Template                               ║
-# ║   RunPod On-start Script                                        ║
+# ║   Template by ooga · RunPod On-start Script                     ║
+# ║                                                                 ║
+# ║   Base image: runpod/pytorch:2.8.0-py3.11-cuda12.8.1           ║
+# ║   GPU support: RTX 3070 → RTX 5090 · A100 · H100               ║
 # ║                                                                 ║
 # ║   Первый запуск: ~30-60 мин (установка + скачивание ~50 GB)    ║
 # ║   Повторный запуск: ~2-3 мин (всё уже на Volume)               ║
@@ -23,22 +26,24 @@ err()     { echo -e "${RED}[✗]${NC} $1"; }
 section() { echo -e "\n${CYAN}━━━ $1 ━━━${NC}"; }
 
 echo -e "${CYAN}"
-echo "  ██████  ██████  ███████ ███    ██ ██████  █████  ██"
-echo " ██    ██ ██   ██ ██      ████   ██ ██   ██ ██  ██ ██"
-echo " ██    ██ ██████  █████   ██ ██  ██ ██████  ███████ ██"
-echo " ██    ██ ██      ██      ██  ██ ██ ██   ██ ██  ██ ██"
-echo "  ██████  ██      ███████ ██   ████ ██████  ██  ██ ██"
+echo "   ██████   ██████   ██████   █████  "
+echo "  ██    ██ ██    ██ ██       ██   ██ "
+echo "  ██    ██ ██    ██ ██   ███ ███████ "
+echo "  ██    ██ ██    ██ ██    ██ ██   ██ "
+echo "   ██████   ██████   ██████  ██   ██ "
 echo -e "${NC}"
-echo "  AI Syndicate — ComfyUI Template for RunPod"
+echo -e "  ${YELLOW}Template by ooga${NC} · AI Syndicate · ComfyUI"
 echo "  ─────────────────────────────────────────"
 
 # ─── Системные зависимости ─────────────────────────────────────────
+# runpod/pytorch:2.8 уже содержит git, curl, wget, python3.11
+# Доустанавливаем только то чего нет
 section "Системные зависимости"
 apt-get update -qq && apt-get install -y -qq \
-    git wget curl aria2 ffmpeg \
-    libgl1 libglib2.0-0 libsm6 libxrender1 \
+    aria2 ffmpeg \
+    libgl1 libglib2.0-0 libsm6 libxrender1 libxext6 \
     > /dev/null 2>&1
-log "Зависимости установлены"
+log "Зависимости установлены (CUDA 12.8 · RTX 3070→5090)"
 
 # ─── ComfyUI ───────────────────────────────────────────────────────
 section "ComfyUI"
@@ -94,7 +99,7 @@ install_node "https://github.com/rgthree/rgthree-comfy"
 log "Все ноды установлены"
 
 # ─── Функция скачивания ────────────────────────────────────────────
-# Пропускает если файл уже есть. aria2c = 16 потоков, быстро.
+# Пропускает если файл уже есть. aria2c = 16 потоков + прогресс в %.
 download() {
     local url="$1"
     local dest_dir="$2"
@@ -105,11 +110,21 @@ download() {
         return
     fi
 
-    log "Скачиваю: $filename"
-    aria2c --console-log-level=error --summary-interval=0 \
+    echo -e "${CYAN}[↓]${NC} Скачиваю: ${YELLOW}$filename${NC}"
+    aria2c --console-log-level=warn \
+           --summary-interval=5 \
+           --download-result=hide \
            -c -x 16 -s 16 -k 1M \
-           "$url" -d "$dest_dir" -o "$filename" \
-        || err "Не удалось скачать: $filename"
+           "$url" -d "$dest_dir" -o "$filename" 2>&1 \
+        | grep --line-buffered -E '\[#|ETA|DL:|%' \
+        | while IFS= read -r line; do
+              echo -e "    ${line}"
+          done
+    if [ -f "$dest_dir/$filename" ]; then
+        log "Готово: $filename"
+    else
+        err "Не удалось скачать: $filename"
+    fi
 }
 
 # ─── Модели — UNET ─────────────────────────────────────────────────
@@ -152,7 +167,7 @@ download \
     "qwen_3_8b_fp8mixed.safetensors"
 
 download \
-    "https://huggingface.co/Comfy-Org/mochi-preview/resolve/main/umt5_xxl_fp8_e4m3fn_scaled.safetensors" \
+    "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" \
     "$MODELS/clip" \
     "umt5_xxl_fp8_e4m3fn_scaled.safetensors"
 
@@ -183,18 +198,41 @@ if [ -f "$FLORENCE_DIR/config.json" ]; then
 else
     log "Скачиваю Florence-2-SD3-Captioner..."
     mkdir -p "$FLORENCE_DIR"
-    pip install --quiet huggingface_hub 2>/dev/null || true
-    huggingface-cli download gokaygokay/Florence-2-SD3-Captioner \
-        --local-dir "$FLORENCE_DIR" \
-        --local-dir-use-symlinks False \
-        ${HF_TOKEN:+--token "$HF_TOKEN"} \
-        || err "Не удалось скачать Florence-2-SD3-Captioner"
+    pip install --quiet --upgrade huggingface_hub
+    python3 -c "
+from huggingface_hub import snapshot_download
+import os
+snapshot_download(
+    repo_id='gokaygokay/Florence-2-SD3-Captioner',
+    local_dir='$FLORENCE_DIR',
+    local_dir_use_symlinks=False,
+    token=os.environ.get('HF_TOKEN') or None
+)
+print('Florence-2-SD3-Captioner скачан')
+" || err "Не удалось скачать Florence-2-SD3-Captioner"
 fi
+
+# ─── Запуск JupyterLab ─────────────────────────────────────────────
+section "JupyterLab"
+pip install --quiet jupyterlab 2>/dev/null || true
+
+JUPYTER_PASSWORD="${JUPYTER_PASSWORD:-}"
+
+jupyter lab \
+    --ip=0.0.0.0 \
+    --port=8888 \
+    --no-browser \
+    --allow-root \
+    --NotebookApp.token="$JUPYTER_PASSWORD" \
+    --NotebookApp.password="" \
+    --ServerApp.root_dir="$WORKSPACE" \
+    > /tmp/jupyter.log 2>&1 &
+
+log "JupyterLab запущен на порту 8888"
 
 # ─── Запуск ComfyUI ────────────────────────────────────────────────
 section "Запуск ComfyUI"
-log "Порт: 8188"
-log "Открой в браузере: https://$(hostname -I | awk '{print $1}'):8188"
+log "ComfyUI запущен на порту 8188"
 
 cd "$COMFY_DIR"
 exec python main.py \
